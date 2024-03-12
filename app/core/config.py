@@ -35,11 +35,11 @@ class Security(BaseModel):
 
 
 class Database(BaseModel):
-    hostname: str = "postgres"
+    hostname: str = "localhost"
     username: str = "postgres"
     password: SecretStr
     port: int = 5432
-    db: str = "postgres"
+    db: str = "Bot_Network_Production"
 
 
 class Settings(BaseSettings):

@@ -16,7 +16,7 @@ from app.core.security.password import (
     get_password_hash,
     verify_password,
 )
-from app.models import RefreshToken, User
+from app.models import RefreshToken, User, Tutor, Engineer, StateEngineer
 from app.schemas.requests import RefreshTokenRequest, UserCreateRequest
 from app.schemas.responses import AccessTokenResponse, UserResponse
 
@@ -24,7 +24,7 @@ router = APIRouter()
 
 ACCESS_TOKEN_RESPONSES: dict[int | str, dict[str, Any]] = {
     400: {
-        "description": "Invalid email or password",
+        "description": "Invalid username or password",
         "content": {
             "application/json": {"example": {"detail": api_messages.PASSWORD_INVALID}}
         },
@@ -70,7 +70,7 @@ async def login_access_token(
     session: AsyncSession = Depends(deps.get_session),
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> AccessTokenResponse:
-    user = await session.scalar(select(User).where(User.email == form_data.username))
+    user = await session.scalar(select(User).where(User.user_name == form_data.username))
 
     if user is None:
         # this is naive method to not return early
@@ -168,15 +168,15 @@ async def register_new_user(
     new_user: UserCreateRequest,
     session: AsyncSession = Depends(deps.get_session),
 ) -> User:
-    user = await session.scalar(select(User).where(User.email == new_user.email))
+    user = await session.scalar(select(User).where(User.user_name == new_user.user_name))
     if user is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=api_messages.EMAIL_ADDRESS_ALREADY_USED,
+            detail="USERNAME_ALREADY_USED",
         )
 
     user = User(
-        email=new_user.email,
+        user_name=new_user.user_name,
         hashed_password=get_password_hash(new_user.password),
     )
     session.add(user)
@@ -188,7 +188,178 @@ async def register_new_user(
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=api_messages.EMAIL_ADDRESS_ALREADY_USED,
+            detail="USERNAME_ALREADY_USED",
+        )
+
+    return user
+
+
+
+@router.post(
+    "/register/SuperUser",
+    response_model=UserResponse,
+    description="Create new SuperUser",
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_new_superuser(
+    new_user: UserCreateRequest,
+    session: AsyncSession = Depends(deps.get_session),
+) -> User:
+    user = await session.scalar(select(User).where(User.user_name == new_user.user_name))
+    if user is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="USERNAME_ALREADY_USED",
+        )
+    if new_user.password!="061203-13a":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=api_messages.PASSWORD_INVALID,
+        )
+    user = User(
+        user_name=new_user.user_name,
+        hashed_password=get_password_hash(new_user.password),
+        role="SuperUser"
+    )
+    session.add(user)
+
+    try:
+        await session.commit()
+    except IntegrityError:  # pragma: no cover
+        await session.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=api_messages.USERNANE_ALREADY_USED,
+        )
+
+    return user
+
+
+@router.post(
+    "/register/tutor",
+    response_model=UserResponse,
+    description="Create new tutor",
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_new_tutor(
+    new_user: UserCreateRequest,
+    session: AsyncSession = Depends(deps.get_session),
+) -> User:
+    user = await session.scalar(select(User).where(User.user_name == new_user.user_name))
+    tutor = await session.scalar(select(Tutor).where(Tutor.name == new_user.user_name))
+    if user is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="USERNAME_ALREADY_USED",
+        )
+    if tutor is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="USERNAME_INVALID",
+        )
+    user = User(
+        user_name=new_user.user_name,
+        hashed_password=get_password_hash(new_user.password),
+        role="Tutor"
+    )
+    session.add(user)
+    await session.flush()
+    tutor.user_id = user.user_id
+    try:
+        await session.commit()
+    except IntegrityError:  # pragma: no cover
+        await session.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=api_messages.USERNANE_ALREADY_USED,
+        )
+
+    return user
+
+
+@router.post(
+    "/register/engineer",
+    response_model=UserResponse,
+    description="Create new engineer",
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_new_engineer(
+    new_user: UserCreateRequest,
+    session: AsyncSession = Depends(deps.get_session),
+) -> User:
+    user = await session.scalar(select(User).where(User.user_name == new_user.user_name))
+    engineer = await session.scalar(select(Engineer).where(Engineer.name == new_user.user_name))
+    if user is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="USERNAME_ALREADY_USED",
+        )
+    if engineer is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="USERNAME_INVALID",
+        )
+    user = User(
+        user_name=new_user.user_name,
+        hashed_password=get_password_hash(new_user.password),
+        role="Engineer"
+    )
+    session.add(user)
+    await session.flush()
+    engineer.user_id = user.user_id
+    try:
+        await session.commit()
+    except IntegrityError:  # pragma: no cover
+        await session.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=api_messages.USERNANE_ALREADY_USED,
+        )
+
+    return user
+
+
+@router.post(
+    "/register/state_engineer",
+    response_model=UserResponse,
+    description="Create new state engineer",
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_new_state_engineer(
+    new_user: UserCreateRequest,
+    session: AsyncSession = Depends(deps.get_session),
+) -> User:
+    user = await session.scalar(select(User).where(User.user_name == new_user.user_name))
+    state_engineer = await session.scalar(select(StateEngineer).where(StateEngineer.name == new_user.user_name))
+    if user is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="USERNAME_ALREADY_USED",
+        )
+    if state_engineer is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="USERNAME_INVALID",
+        )
+    user = User(
+        user_name=new_user.user_name,
+        hashed_password=get_password_hash(new_user.password),
+        role="StateEngineer"
+    )
+    session.add(user)
+    await session.flush()
+    state_engineer.user_id = user.user_id
+    try:
+        await session.commit()
+    except IntegrityError:  # pragma: no cover
+        await session.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=api_messages.USERNANE_ALREADY_USED,
         )
 
     return user

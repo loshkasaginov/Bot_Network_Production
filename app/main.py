@@ -32,3 +32,6 @@ app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=get_settings().security.allowed_hosts,
 )
+
+
+#addopts = "-vv -n auto --cov --cov-report xml --cov-report term-missing --cov-fail-under=100"

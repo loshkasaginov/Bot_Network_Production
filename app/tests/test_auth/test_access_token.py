@@ -21,7 +21,7 @@ async def test_login_access_token_has_response_status_code(
     response = await client.post(
         app.url_path_for("login_access_token"),
         data={
-            "username": default_user.email,
+            "username": default_user.user_name,
             "password": default_user_password,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -37,7 +37,7 @@ async def test_login_access_token_jwt_has_valid_token_type(
     response = await client.post(
         app.url_path_for("login_access_token"),
         data={
-            "username": default_user.email,
+            "username": default_user.user_name,
             "password": default_user_password,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -55,7 +55,7 @@ async def test_login_access_token_jwt_has_valid_expire_time(
     response = await client.post(
         app.url_path_for("login_access_token"),
         data={
-            "username": default_user.email,
+            "username": default_user.user_name,
             "password": default_user_password,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -77,7 +77,7 @@ async def test_login_access_token_returns_valid_jwt_access_token(
     response = await client.post(
         app.url_path_for("login_access_token"),
         data={
-            "username": default_user.email,
+            "username": default_user.user_name,
             "password": default_user_password,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -99,7 +99,7 @@ async def test_login_access_token_refresh_token_has_valid_expire_time(
     response = await client.post(
         app.url_path_for("login_access_token"),
         data={
-            "username": default_user.email,
+            "username": default_user.user_name,
             "password": default_user_password,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -121,7 +121,7 @@ async def test_login_access_token_refresh_token_exists_in_db(
     response = await client.post(
         app.url_path_for("login_access_token"),
         data={
-            "username": default_user.email,
+            "username": default_user.user_name,
             "password": default_user_password,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -143,7 +143,7 @@ async def test_login_access_token_refresh_token_in_db_has_valid_fields(
     response = await client.post(
         app.url_path_for("login_access_token"),
         data={
-            "username": default_user.email,
+            "username": default_user.user_name,
             "password": default_user_password,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -183,7 +183,7 @@ async def test_auth_access_token_fail_for_invalid_password_with_message(
     response = await client.post(
         app.url_path_for("login_access_token"),
         data={
-            "username": default_user.email,
+            "username": default_user.user_name,
             "password": "invalid",
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},

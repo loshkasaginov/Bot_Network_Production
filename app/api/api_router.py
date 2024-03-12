@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from app.api import api_messages
-from app.api.endpoints import auth, users
+from app.api.endpoints import auth, users, tutors, engineers, state_engineers
 
 auth_router = APIRouter()
 auth_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -32,3 +32,6 @@ api_router = APIRouter(
     }
 )
 api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(tutors.router, prefix="/tutors", tags=["tutors"])
+api_router.include_router(engineers.router, prefix="/engineers", tags=["engineers"])
+api_router.include_router(state_engineers.router, prefix="/state_engineers", tags=["state_engineers"])

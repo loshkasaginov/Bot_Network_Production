@@ -15,5 +15,25 @@ class UserUpdatePasswordRequest(BaseRequest):
 
 
 class UserCreateRequest(BaseRequest):
-    email: EmailStr
+    user_name: str
     password: str
+
+
+class RoleCreateRequest(BaseRequest):
+    link: str
+    name: str
+
+class SuperUserCreateRequest(UserCreateRequest):
+    pass
+
+class TutorCreateRequest(RoleCreateRequest):
+    tutors_number: int
+
+
+
+class EngineerCreateRequest(RoleCreateRequest):
+    engineers_number: int
+
+
+class StateEngineerCreateRequest(RoleCreateRequest):
+    state_engineers_number: int

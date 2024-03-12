@@ -15,4 +15,24 @@ class AccessTokenResponse(BaseResponse):
 
 class UserResponse(BaseResponse):
     user_id: str
-    email: EmailStr
+    user_name: str
+
+
+class SuperuserUserResponse(UserResponse):
+    pass
+
+class RoleResponse(BaseResponse):
+    link: str
+    name: str
+
+class TutorResponse(RoleResponse):
+    tutors_number: int
+
+
+class EngineerResponse(RoleResponse):
+    engineers_number: int
+
+
+
+class StateEngineerResponse(RoleResponse):
+    state_engineers_number: int

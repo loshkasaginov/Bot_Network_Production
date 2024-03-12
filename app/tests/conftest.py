@@ -19,7 +19,7 @@ from app.main import app as fastapi_app
 from app.models import Base, User
 
 default_user_id = "b75365d9-7bf9-4f54-add5-aeab333a087b"
-default_user_email = "geralt@wiedzmin.pl"
+default_user_name = "test_user_name"
 default_user_password = "geralt"
 default_user_access_token = create_jwt_token(default_user_id).access_token
 
@@ -121,7 +121,7 @@ async def fixture_default_user(
 ) -> User:
     default_user = User(
         user_id=default_user_id,
-        email=default_user_email,
+        user_name=default_user_name,
         hashed_password=default_hashed_password,
     )
     session.add(default_user)

@@ -14,7 +14,7 @@ async def test_register_new_user_status_code(
     response = await client.post(
         app.url_path_for("register_new_user"),
         json={
-            "email": "test@email.com",
+            "user_name": "test_user_name",
             "password": "testtesttest",
         },
     )
@@ -29,13 +29,13 @@ async def test_register_new_user_creates_record_in_db(
     await client.post(
         app.url_path_for("register_new_user"),
         json={
-            "email": "test@email.com",
+            "user_name": "test_user_name",
             "password": "testtesttest",
         },
     )
 
     user_count = await session.scalar(
-        select(func.count()).where(User.email == "test@email.com")
+        select(func.count()).where(User.user_name == "test_user_name")
     )
     assert user_count == 1
 
@@ -45,7 +45,7 @@ async def test_register_new_user_cannot_create_already_created_user(
     session: AsyncSession,
 ) -> None:
     user = User(
-        email="test@email.com",
+        user_name="test_user_name",
         hashed_password="bla",
     )
     session.add(user)
@@ -54,10 +54,10 @@ async def test_register_new_user_cannot_create_already_created_user(
     response = await client.post(
         app.url_path_for("register_new_user"),
         json={
-            "email": "test@email.com",
+            "user_name": "test_user_name",
             "password": "testtesttest",
         },
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": api_messages.EMAIL_ADDRESS_ALREADY_USED}
+    assert response.json() == {"detail": "USERNAME_ALREADY_USED"}
