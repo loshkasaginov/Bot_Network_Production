@@ -1,4 +1,3 @@
-# app/api/endpoints/pets.py
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import select, delete, update
@@ -50,7 +49,7 @@ async def get_all_tutors(
 ) -> list[Tutor]:
     check_role_superuser(current_user)
     tutors = await session.scalars(
-        select(Tutor).where(Tutor.user_id == current_user.user_id).order_by(Tutor.name)
+        select(Tutor).where(Tutor.user_id!=None).order_by(Tutor.name)
     )
     return list(tutors.all())
 
@@ -78,8 +77,7 @@ async def delete_current_tutor(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="THERE_IS_NO_TUTOR_WITH_THIS_NAME",
         )
-    tutor.user_id=None
-    await session.execute(update(Tutor).where(Tutor.name == tutor_name))
+    await session.execute(update(Tutor).where(Tutor.name == tutor_name).values(user_id=None, name=Tutor.name + "_deleted"))
     await session.flush()
     await session.execute(delete(User).where(User.user_name == tutor_name))
     await session.commit()
