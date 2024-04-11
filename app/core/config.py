@@ -30,7 +30,7 @@ class Security(BaseModel):
     jwt_access_token_expire_secs: int = 24 * 3600  # 1d
     refresh_token_expire_secs: int = 28 * 24 * 3600  # 28d
     password_bcrypt_rounds: int = 12
-    allowed_hosts: list[str] = ["localhost", "127.0.0.1"]
+    allowed_hosts: list[str] = ["localhost", "127.0.0.1", "0.0.0.0"]
     backend_cors_origins: list[AnyHttpUrl] = []
 
 
@@ -41,11 +41,17 @@ class Database(BaseModel):
     port: int = 5432
     db: str = "Bot_Network_Production"
 
+class RedisSettings(BaseModel):
+    url: SecretStr
+
+class SentrySettings(BaseModel):
+    dsn: SecretStr
 
 class Settings(BaseSettings):
     security: Security
     database: Database
-
+    redis: RedisSettings
+    sentry: SentrySettings
     @computed_field  # type: ignore[misc]
     @property
     def sqlalchemy_database_uri(self) -> URL:

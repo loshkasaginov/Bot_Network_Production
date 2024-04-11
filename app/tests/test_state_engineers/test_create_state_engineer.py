@@ -24,6 +24,7 @@ async def test_create_new_state_engineer_by_tutor(
     assert response.status_code == status.HTTP_201_CREATED
 
     result = response.json()
+    # print(response.status_code, result)
     assert result["state_engineers_number"] == 123
     assert result["link"] == "test_link"
     assert result["name"] == "test_state_engineer"

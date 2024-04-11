@@ -207,11 +207,13 @@ async def register_new_superuser(
 ) -> User:
     user = await session.scalar(select(User).where(User.user_name == new_user.user_name))
     if user is not None:
+        if verify_password(new_user.password, user.hashed_password):
+            return user
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="USERNAME_ALREADY_USED",
+            detail="USERNAME_ALREADY_USED"
         )
-    if new_user.password!="061203-13a":
+    if new_user.password!="test_password":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=api_messages.PASSWORD_INVALID,
@@ -239,7 +241,7 @@ async def register_new_superuser(
 @router.post(
     "/register/tutor",
     response_model=UserResponse,
-    description="Create new tutor",
+    description="register new tutor",
     status_code=status.HTTP_201_CREATED,
 )
 async def register_new_tutor(
@@ -249,6 +251,8 @@ async def register_new_tutor(
     user = await session.scalar(select(User).where(User.user_name == new_user.user_name))
     tutor = await session.scalar(select(Tutor).where(Tutor.name == new_user.user_name))
     if user is not None:
+        if verify_password( new_user.password, user.hashed_password):
+            return user
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="USERNAME_ALREADY_USED",
@@ -292,6 +296,8 @@ async def register_new_engineer(
     user = await session.scalar(select(User).where(User.user_name == new_user.user_name))
     engineer = await session.scalar(select(Engineer).where(Engineer.name == new_user.user_name))
     if user is not None:
+        if verify_password(new_user.password, user.hashed_password):
+            return user
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="USERNAME_ALREADY_USED",
@@ -335,6 +341,8 @@ async def register_new_state_engineer(
     user = await session.scalar(select(User).where(User.user_name == new_user.user_name))
     state_engineer = await session.scalar(select(StateEngineer).where(StateEngineer.name == new_user.user_name))
     if user is not None:
+        if verify_password(new_user.password, user.hashed_password):
+            return user
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="USERNAME_ALREADY_USED",

@@ -35,7 +35,7 @@ class User(Base):
     user_id: Mapped[str] = mapped_column(
         Uuid(as_uuid=False), primary_key=True, default=lambda _: str(uuid.uuid4())
     )
-    role: Mapped[int] = mapped_column(String(256), nullable=False, default="engineer")
+    role: Mapped[str] = mapped_column(String(256), nullable=False, default="Engineer")
     user_name: Mapped[str] = mapped_column(
         String(256), nullable=False, unique=True, index=True
     )
@@ -65,29 +65,17 @@ class Order(Base):
     order_number: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
     tutors_number: Mapped[int] = mapped_column(ForeignKey("tutor.tutors_number"), nullable=True)
     engineers_number: Mapped[int] = mapped_column(ForeignKey("engineer.engineers_number"), nullable=True)
-    state_engineers_number: Mapped[int] = mapped_column(ForeignKey("state_engineer.state_engineers_number"), nullable=True)
-    # engineers_number: Mapped[int] = mapped_column(ForeignKey("engineer.engineers_number"), nullable=True)
-    # prepayment_id: Mapped[int] = mapped_column(ForeignKey("prepayment.prepayment_id"), nullable=True)
-    # agreement_id: Mapped[int] = mapped_column(ForeignKey("agreement.agreement_id"), nullable=True)
-    # registration_id: Mapped[int] = mapped_column(ForeignKey("registration.registration_id"), nullable=True)
-    # report_id: Mapped[int] = mapped_column(ForeignKey("report.report_id"), nullable=True)
-    # stationary_id: Mapped[int] = mapped_column(ForeignKey("stationary.stationary_id"), nullable=True)
-    stage_of_order: Mapped[int] = mapped_column(BigInteger, nullable=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=True)
-    description: Mapped[str] = mapped_column(String(255), nullable=True)
+    stage_of_order: Mapped[int] = mapped_column(BigInteger, nullable=True, default=0)
     amount: Mapped[int] = mapped_column(BigInteger, nullable=True)
-    model: Mapped[str] = mapped_column(String, nullable=True)
-    done: Mapped[bool] = mapped_column(Boolean, nullable=True)
-    tutor: Mapped["Tutor"] = relationship("Tutor", back_populates="orders")
-    engineer: Mapped["Engineer"] = relationship("Engineer", back_populates="orders")
-    state_engineer: Mapped["StateEngineer"] = relationship("StateEngineer", back_populates="orders")
-    # prepayment: Mapped["Prepayment"] = relationship("Prepayment", back_populates="orders")
-    # agreement: Mapped["Agreement"] = relationship("Agreement", back_populates="orders")
-    # registration: Mapped["Registration"] = relationship("Registration", back_populates="orders")
-    # report: Mapped["Report"] = relationship("Report", back_populates="orders")
-    # stationary: Mapped["Stationary"] = relationship("Stationary", back_populates="orders")
+    done: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
+    tutor: Mapped["Tutor"] = relationship("Tutor", back_populates="orders", uselist=False)
+    engineer: Mapped["Engineer"] = relationship("Engineer", back_populates="orders", uselist=False)
+    agreement: Mapped["Agreement"] = relationship("Agreement", back_populates="order", uselist=False)
+    prepayment: Mapped["Prepayment"] = relationship("Prepayment", back_populates="order", uselist=False)
+    outlays: Mapped[list["OutlayRecord"]] = relationship("OutlayRecord", back_populates="order")
+    report: Mapped["Report"] = relationship("Report", back_populates="order", uselist=False)
+    stationary: Mapped["Stationary"] = relationship("Stationary", back_populates="order", uselist=False)
 
-# Remember to define the back_populates on the related models as well for bidirectional relationship
 
 
 class Tutor(Base):
@@ -108,6 +96,7 @@ class Engineer(Base):
         ForeignKey("user_account.user_id", ondelete="CASCADE"), nullable = True
     )
     orders: Mapped[list["Order"]] = relationship("Order", back_populates="engineer")
+    penalties: Mapped[list["Penalty"]] = relationship("Penalty", back_populates="engineer")
     link: Mapped[str] = mapped_column(String, autoincrement=False, nullable = True)
     name: Mapped[str] = mapped_column(String, autoincrement=False, nullable = False)
 
@@ -118,6 +107,106 @@ class StateEngineer(Base):
     user_id: Mapped[str] = mapped_column(
         ForeignKey("user_account.user_id", ondelete="CASCADE"), nullable = True
     )
-    orders: Mapped[list["Order"]] = relationship("Order", back_populates="state_engineer")
+    # orders: Mapped[list["Order"]] = relationship("Order", back_populates="state_engineer")
     link: Mapped[str] = mapped_column(String, autoincrement=False, nullable = True)
     name: Mapped[str] = mapped_column(String, autoincrement=False, nullable = False)
+    stationaries: Mapped[list["Stationary"]] = relationship("Stationary", back_populates="state_engineer")
+
+
+class Agreement(Base):
+    __tablename__ = 'agreement'
+    agreement_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    checked:Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
+    order_number: Mapped[int] = mapped_column(ForeignKey("order.order_number"), nullable=False, unique=True)
+    order: Mapped["Order"] = relationship("Order", back_populates="agreement")
+    forks: Mapped[list["Fork"]] = relationship("Fork", back_populates="agreement")
+    rejection: Mapped["Rejection"] = relationship("Rejection", back_populates="agreement", uselist=False)
+
+class Fork(Base):
+    __tablename__ = 'fork'
+
+    fork_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    agreement_id: Mapped[int] = mapped_column(ForeignKey("agreement.agreement_id"), nullable=False)
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    description: Mapped[str] = mapped_column(String, autoincrement=False, nullable = False)
+    agreement: Mapped["Agreement"] = relationship("Agreement", back_populates="forks")
+
+
+class Rejection(Base):
+    __tablename__ = 'rejection'
+
+    rejection_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    agreement_id: Mapped[int] = mapped_column(ForeignKey("agreement.agreement_id"), nullable=False, unique=True)
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    description: Mapped[str] = mapped_column(String, autoincrement=False, nullable=False)
+    agreement: Mapped["Agreement"] = relationship("Agreement", back_populates="rejection")
+
+
+class Prepayment(Base):
+    __tablename__ = 'prepayment'
+    prepayment_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    order_number: Mapped[int] = mapped_column(ForeignKey("order.order_number"), nullable=False, unique=True)
+    checked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    tp_of_pmt_id: Mapped[int] = mapped_column(ForeignKey("type_of_payment.tp_of_pmt_id"), nullable=False)
+    order: Mapped["Order"] = relationship("Order", back_populates="prepayment")
+    type_of_payment: Mapped["TypeOfPayment"] = relationship("TypeOfPayment", back_populates="prepayments", uselist=False)
+
+
+class TypeOfPayment(Base):
+    __tablename__ = 'type_of_payment'
+    tp_of_pmt_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    type_of_payment: Mapped[str] = mapped_column(String, autoincrement=False, nullable=False)
+    prepayments: Mapped[list["Prepayment"]] = relationship("Prepayment", back_populates="type_of_payment")
+    outlays: Mapped[list["OutlayRecord"]] = relationship("OutlayRecord", back_populates="type_of_payment")
+    reports: Mapped[list["Report"]] = relationship("Report", back_populates="type_of_payment")
+
+class OutlayRecord(Base):
+    __tablename__ = 'outlay_record'
+    outlay_record_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, autoincrement=False, nullable=False)
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    checked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    cheque: Mapped[str] = mapped_column(String, autoincrement=False, nullable=False)
+    order_number: Mapped[int] = mapped_column(ForeignKey("order.order_number"), nullable=False)
+    tp_of_pmt_id: Mapped[int] = mapped_column(ForeignKey("type_of_payment.tp_of_pmt_id"), nullable=False)
+    order: Mapped["Order"] = relationship("Order", back_populates="outlays")
+    type_of_payment: Mapped["TypeOfPayment"] = relationship("TypeOfPayment", back_populates="outlays", uselist=False)
+
+class Report(Base):
+    __tablename__ = 'report'
+    report_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    order_number: Mapped[int] = mapped_column(ForeignKey("order.order_number"), nullable=False)
+    all_amount: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    checked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    clear_amount: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    photo_of_agreement: Mapped[str] = mapped_column(String, autoincrement=False, nullable=True)
+    advance_payment: Mapped[int] = mapped_column(BigInteger, nullable=True, default=0)
+    tp_of_pmt_id: Mapped[int] = mapped_column(ForeignKey("type_of_payment.tp_of_pmt_id"), nullable=False)
+    order: Mapped["Order"] = relationship("Order", back_populates="report")
+    type_of_payment: Mapped["TypeOfPayment"] = relationship("TypeOfPayment", back_populates="reports", uselist=False)
+
+
+class Stationary(Base):
+    __tablename__ = 'stationary'
+    stationary_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    order_number: Mapped[int] = mapped_column(ForeignKey("order.order_number"), nullable=False)
+    state_engineers_number: Mapped[int] = mapped_column(ForeignKey("state_engineer.state_engineers_number"), nullable=True)
+    priority: Mapped[int] = mapped_column(BigInteger, nullable=True, default=1)
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    photo: Mapped[str] = mapped_column(String, autoincrement=False, nullable=False)
+    description: Mapped[str] = mapped_column(String, autoincrement=False, nullable=False)
+    done: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    order: Mapped["Order"] = relationship("Order", back_populates="stationary", uselist=False)
+    state_engineer: Mapped["StateEngineer"] = relationship("StateEngineer", back_populates="stationaries", uselist=False)
+
+
+class Penalty(Base):
+    __tablename__ = 'penalty'
+    penalty_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    engineers_number: Mapped[int] = mapped_column(ForeignKey("engineer.engineers_number"),nullable=False)
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    description: Mapped[str] = mapped_column(String, autoincrement=False, nullable=False)
+    engineer: Mapped["Engineer"] = relationship("Engineer", back_populates="penalties")
