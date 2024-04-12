@@ -107,3 +107,7 @@ class PenaltyCreateRequest(BaseRequest):
     engineers_number: int
     amount: int
     description: str
+
+class GetOrderByDateReqeust(BaseModel):
+    start_time:datetime
+    end_time:datetime

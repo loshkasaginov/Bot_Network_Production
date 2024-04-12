@@ -157,14 +157,9 @@ class ReportResponse(BaseResponse):
     advance_payment: int
     type_of_payment: str
 
-class ReportTutorResponse(BaseResponse):
+class ReportTutorResponse(ReportResponse):
     order_number: int
-    all_amount: int
-    clear_amount: int
-    update_time: datetime
-    photo_of_agreement: Optional[str]
-    advance_payment: int
-    type_of_payment: str
+
 class ReportBaseResponse(BaseResponse):
     all_amount: int
 

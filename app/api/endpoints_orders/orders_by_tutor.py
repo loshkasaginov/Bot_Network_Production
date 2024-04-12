@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import select, delete, update, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from app.api import deps
 from sqlalchemy.orm import aliased
 from app.models import *
 from fastapi_cache.decorator import cache
-from app.schemas.requests import OrderCreateRequest
-from app.schemas.responses import OrderResponse, OrderTutorShortResponse, CurrentOrderTutorResponse
+from app.schemas.requests import OrderCreateRequest, GetOrderByDateReqeust
+from app.schemas.responses import OrderResponse, OrderTutorShortResponse, CurrentOrderTutorResponse, ReportTutorResponse
 
 
 router = APIRouter()
@@ -63,11 +63,10 @@ async def create_new_order(
     status_code=status.HTTP_200_OK,
     description="Get all active orders.",
 )
-@cache(expire=30)
 async def get_orders_tutor(
     session: AsyncSession = Depends(deps.get_session),
     current_user: User = Depends(deps.get_current_user),
-) -> list[Order]:
+) -> list[OrderTutorShortResponse]:
     check_role_tutor(current_user)
     result = await session.execute(
         select(Order.order_number, Order.engineers_number, Order.stage_of_order, Order.update_time , Engineer.name)
@@ -75,6 +74,54 @@ async def get_orders_tutor(
         .where( Order.done == False)
     )
     return list(result.all())
+
+
+@router.get(
+    "/get/by_date",
+    response_model=list[ReportTutorResponse],
+    status_code=status.HTTP_200_OK,
+    description="Get list of reports by date.",
+)
+async def get_all_reports_by_date(
+        # data: GetOrderByDateReqeust,
+        session: AsyncSession = Depends(deps.get_session),
+        current_user: User = Depends(deps.get_current_user),
+        start_time: datetime = Query(..., description="Start time for filtering orders"),
+        end_time: datetime = Query(..., description="End time for filtering orders"),
+) -> list[ReportTutorResponse]:
+    check_role_tutor(current_user)
+    orders = await session.scalars(
+        select(Report.order_number).where(and_(Report.checked == True, Report.update_time.between(start_time, end_time)))
+    )
+    order = list(orders.all())
+    data = []
+    for r in order:
+        report = await session.execute(
+            select(
+                Report.all_amount,
+                Report.clear_amount,
+                Report.advance_payment,
+                Report.photo_of_agreement,
+                Report.update_time,
+                TypeOfPayment.type_of_payment,
+                Report.order_number,
+            )
+            .join(TypeOfPayment, Report.tp_of_pmt_id == TypeOfPayment.tp_of_pmt_id)
+            .where(Report.order_number == r)
+        )
+        report_data = report.all()[0]
+
+        r_data = {
+            "all_amount": report_data[0],
+            "clear_amount": int(report_data[1]),
+            "advance_payment": report_data[2],
+            "photo_of_agreement": report_data[3],
+            "update_time": report_data[4],
+            "type_of_payment": report_data[5],
+            "order_number": report_data[6]
+        }
+        data.append(r_data)
+    return data
 
 
 @router.get(
